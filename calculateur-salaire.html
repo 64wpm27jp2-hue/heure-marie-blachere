@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GainCalc — Calculateur de salaire</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0d0f14;--card:#13161e;--border:#1e2130;
+  --accent:#f0c040;--accent-dim:#f0c04022;
+  --green:#3dd68c;--green-dim:#3dd68c18;
+  --red:#f25c5c;--red-dim:#f25c5c18;
+  --blue:#5b8af5;--blue-dim:#5b8af518;
+  --text:#e8eaf0;--muted:#6b7080;--sub:#3a3f52;
+}
+body{background:var(--bg);color:var(--text);font-family:'DM Mono','Courier New',monospace;min-height:100vh}
+input[type=number]::-webkit-inner-spin-button{opacity:.3}
+::-webkit-scrollbar{width:4px}::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--sub);border-radius:4px}
+select option{background:var(--card)}
+
+/* Header & nav */
+header{background:var(--card);border-bottom:1px solid var(--border);padding:14px 20px;position:sticky;top:0;z-index:10;backdrop-filter:blur(10px)}
+.header-inner{max-width:680px;margin:0 auto;display:flex;align-items:center;justify-content:space-between}
+h1{font-family:'Playfair Display',serif;font-size:22px;font-weight:900;color:var(--accent);letter-spacing:-.02em}
+.header-sub{color:var(--muted);font-size:11px;margin-top:1px}
+nav{background:var(--card);border-bottom:1px solid var(--border);position:sticky;top:57px;z-index:9}
+.nav-inner{max-width:680px;margin:0 auto;display:flex}
+.tab-btn{flex:1;padding:12px 4px;background:none;border:none;cursor:pointer;color:var(--muted);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;font-family:inherit;border-bottom:2px solid transparent;opacity:.7;transition:all .2s}
+.tab-btn.active{color:var(--accent);border-bottom-color:var(--accent);opacity:1}
+.tab-btn:hover{opacity:1}
+
+/* Main */
+main{max-width:680px;margin:0 auto;padding:20px 16px;display:flex;flex-direction:column;gap:16px}
+.tab-content{display:none;flex-direction:column;gap:16px}
+.tab-content.active{display:flex}
+
+/* Card */
+.card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:20px}
+
+/* Labels & inputs */
+.label{color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.1em;margin-bottom:6px}
+.input-wrap{flex:1}
+.input-row{display:flex;gap:12px;margin-bottom:12px}
+.input-box{display:flex;align-items:center;background:var(--bg);border:1px solid var(--border);border-radius:10px;overflow:hidden}
+.input-box input{flex:1;background:transparent;border:none;outline:none;padding:10px 14px;color:var(--text);font-size:15px;font-family:'DM Mono',monospace;width:0}
+.input-box .suffix{padding-right:12px;color:var(--muted);font-size:13px}
+.input-box select,.select-full{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:10px 14px;color:var(--text);font-size:13px;font-family:'DM Mono',monospace;outline:none}
+
+/* Pill */
+.pill{display:inline-flex;align-items:center;padding:2px 10px;border-radius:99px;font-size:11px;font-weight:700;letter-spacing:.05em}
+
+/* StatRow */
+.stat-row{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border)}
+.stat-row .stat-label{color:var(--muted);font-size:13px}
+.stat-row .stat-val{font-size:15px;font-weight:600;font-family:'DM Mono',monospace}
+
+/* BigStat */
+.big-stats{display:flex;gap:10px;margin-bottom:16px}
+.big-stat{border-radius:14px;padding:16px;text-align:center;flex:1}
+.big-stat .bs-label{color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.1em;margin-bottom:4px}
+.big-stat .bs-val{font-size:24px;font-weight:800;font-family:'DM Mono',monospace}
+.big-stat .bs-sub{color:var(--muted);font-size:11px;margin-top:2px}
+
+/* Button */
+.btn-primary{width:100%;background:var(--accent);color:#000;border:none;border-radius:12px;padding:13px 0;font-size:14px;font-weight:800;cursor:pointer;font-family:inherit;letter-spacing:.05em;transition:all .15s;margin-top:16px}
+.btn-primary:hover{opacity:.88;transform:translateY(-1px)}
+.btn-primary:active{transform:scale(.97)}
+
+/* Entry row */
+.entry-row{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:16px;position:relative}
+.entry-row:hover .del-btn{opacity:1!important}
+.del-btn{position:absolute;top:12px;right:12px;background:none;border:none;color:var(--red);cursor:pointer;font-size:16px;padding:4px;opacity:0;transition:.15s}
+.net-bar{height:4px;background:var(--border);border-radius:4px;overflow:hidden;margin-top:8px}
+.net-bar-fill{height:100%;background:var(--green);border-radius:4px}
+
+/* Recap */
+.month-btn{padding:6px 14px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;transition:all .15s}
+.month-btns{display:flex;gap:6px;flex-wrap:wrap}
+.week-block{margin-bottom:12px;background:var(--bg);border-radius:12px;padding:14px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.mini-stat{background:var(--bg);border-radius:10px;padding:12px 14px}
+.mini-stat-label{color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px}
+.mini-stat-val{font-weight:800;font-size:15px;font-family:'DM Mono',monospace}
+.progress-bar{height:6px;background:var(--border);border-radius:4px;overflow:hidden}
+.progress-fill{height:100%;border-radius:4px;background:linear-gradient(90deg,var(--blue),var(--green));transition:width .5s}
+
+/* Barème apprenti */
+.bareme-row{border-radius:12px;overflow:hidden;transition:all .15s}
+.radio-dot{width:16px;height:16px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+.radio-inner{width:6px;height:6px;border-radius:50%;background:#fff}
+.bareme-fields{padding:0 12px 12px;display:flex;flex-direction:column;gap:8px}
+
+/* Settings buttons */
+.btn-outline{flex:1;padding:11px 0;border-radius:10px;background:transparent;cursor:pointer;font-family:inherit;font-size:13px;font-weight:700;transition:all .15s}
+.btn-outline:hover{opacity:.8}
+
+/* Taux toggle */
+.checkbox-row{display:flex;align-items:center;gap:8px;cursor:pointer;font-size:12px;color:var(--muted)}
+.taux-display{background:var(--bg);border-radius:10px;padding:10px 14px}
+
+/* Info box */
+.info-box{background:var(--blue-dim);border-radius:10px;padding:12px;margin-top:14px}
+
+/* Contract buttons */
+.contract-btn{flex:1;padding:10px 0;border-radius:10px;border-width:2px;border-style:solid;font-weight:700;font-size:13px;cursor:pointer;font-family:inherit;transition:all .15s}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <div>
+      <h1>₣ GainCalc</h1>
+      <p class="header-sub" id="header-sub">Salarié · 12.50 €/h</p>
+    </div>
+    <div id="header-pill"></div>
+  </div>
+</header>
+
+<nav>
+  <div class="nav-inner">
+    <button class="tab-btn active" data-tab="calcul" onclick="switchTab('calcul')">💰 Calcul</button>
+    <button class="tab-btn" data-tab="historique" onclick="switchTab('historique')">📋 Historique</button>
+    <button class="tab-btn" data-tab="recap" onclick="switchTab('recap')">📊 Récap</button>
+    <button class="tab-btn" data-tab="reglages" onclick="switchTab('reglages')">⚙️ Réglages</button>
+  </div>
+</nav>
+
+<main>
+  <!-- CALCUL -->
+  <div class="tab-content active" id="tab-calcul"></div>
+
+  <!-- HISTORIQUE -->
+  <div class="tab-content" id="tab-historique"></div>
+
+  <!-- RECAP -->
+  <div class="tab-content" id="tab-recap"></div>
+
+  <!-- RÉGLAGES -->
+  <div class="tab-content" id="tab-reglages"></div>
+</main>
+
+<script>
+// ── Constants ──────────────────────────────────────────────────────────────────
+const SMIC_HORAIRE = 11.65;
+const APPRENTI_BAREMES_DEFAULT = [
+  { label: "< 18 ans — 1ʳᵉ année", pct: 27 },
+  { label: "< 18 ans — 2ᵉ année",  pct: 39 },
+  { label: "< 18 ans — 3ᵉ année",  pct: 55 },
+  { label: "18–25 ans — 1ʳᵉ année",pct: 43 },
+  { label: "18–25 ans — 2ᵉ année", pct: 51 },
+  { label: "18–25 ans — 3ᵉ année", pct: 67 },
+  { label: "≥ 26 ans — 1ʳᵉ année", pct: 100 },
+  { label: "≥ 26 ans — 2ᵉ année",  pct: 100 },
+  { label: "≥ 26 ans — 3ᵉ année",  pct: 100 },
+];
+const DEFAULT_SETTINGS = {
+  nom:"Salarié", profil:"salarie", tauxHoraire:12.50, apprentiBareme:3,
+  cotisations:22, tauxCompl:10, tauxSupp25:25, tauxSupp50:50,
+  seuilCompl:35, seuilSupp:35, pauseDefault:30, devise:"€"
+};
+const STORAGE = "calcgain_v1";
+
+// ── State ──────────────────────────────────────────────────────────────────────
+let appData = loadData();
+let currentTab = "calcul";
+let selectedMonth = new Date().toISOString().slice(0,7);
+let form = { date: today(), debut:"08:00", fin:"17:00", pause:"", note:"", tauxCustom:"", overrideTaux:false, cotisCustom:"", overrideCotis:false };
+
+function loadData() {
+  try { return JSON.parse(localStorage.getItem(STORAGE)) || { journees:[], settings:{...DEFAULT_SETTINGS} }; }
+  catch { return { journees:[], settings:{...DEFAULT_SETTINGS} }; }
+}
+function saveData() { localStorage.setItem(STORAGE, JSON.stringify(appData)); }
+
+// ── Helpers ────────────────────────────────────────────────────────────────────
+function today() { return new Date().toISOString().slice(0,10); }
+function f2(n) { return Number(n).toFixed(2); }
+function fEur(n, dev) { return `${f2(n)} ${dev||s().devise}`; }
+function fPct(n) { return `${n}%`; }
+function hhmm(decH) { const h=Math.floor(decH), m=Math.round((decH-h)*60); return `${String(h).padStart(2,"0")}h${String(m).padStart(2,"0")}`; }
+function timeToH(str) { if(!str) return null; const [h,m]=str.split(":").map(Number); return h+m/60; }
+function fdate(iso) { return new Date(iso+"T12:00:00").toLocaleDateString("fr-FR",{weekday:"short",day:"numeric",month:"short",year:"numeric"}); }
+function uid() { return Math.random().toString(36).slice(2,9); }
+function s() { return {...DEFAULT_SETTINGS, ...appData.settings}; }
+function baremes() { return appData.settings?.customBaremes || APPRENTI_BAREMES_DEFAULT.map(b=>({...b})); }
+
+function calcGain(debut, fin, pauseMin, settings) {
+  if (!debut||!fin) return null;
+  const hD=timeToH(debut), hF=timeToH(fin);
+  if (hF<=hD) return null;
+  const total = hF-hD-pauseMin/60;
+  if (total<=0) return null;
+  let taux;
+  if (settings.profil==="apprenti") {
+    const bs=baremes();
+    const b=bs[settings.apprentiBareme]||bs[0];
+    const smic=settings.smicHoraire??SMIC_HORAIRE;
+    taux=(smic*b.pct)/100;
+    const cotisB=b.cotisations??settings.cotisations;
+    const brut2=(Math.min(total,settings.seuilCompl/5)*taux)+(Math.max(0,total-settings.seuilCompl/5)*taux*(1+settings.tauxSupp25/100));
+    const cot2=brut2*cotisB/100;
+    return {total,heuresNorm:Math.min(total,settings.seuilCompl/5),heuresSupp:Math.max(0,total-settings.seuilCompl/5),taux,brut:brut2,cotisations:cot2,net:brut2-cot2};
+  } else {
+    taux=settings.tauxHoraire;
+  }
+  const seuilJ=settings.seuilCompl/5;
+  const heuresNorm=Math.min(total,seuilJ);
+  const heuresSupp=Math.max(0,total-seuilJ);
+  const brut=heuresNorm*taux+heuresSupp*taux*(1+settings.tauxSupp25/100);
+  const cotisations=brut*(settings.cotisations/100);
+  const net=brut-cotisations;
+  return {total,heuresNorm,heuresSupp,taux,brut,cotisations,net};
+}
+
+// ── Tab switching ──────────────────────────────────────────────────────────────
+function switchTab(tab) {
+  currentTab = tab;
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab===tab));
+  document.querySelectorAll('.tab-content').forEach(c => c.classList.toggle('active', c.id==='tab-'+tab));
+  render();
+}
+
+// ── Pill helper ────────────────────────────────────────────────────────────────
+function pillHTML(text, color) {
+  const c={gold:"#f0c040",green:"#3dd68c",red:"#f25c5c",blue:"#5b8af5",gray:"#6b7080"};
+  const col=c[color]||c.gray;
+  return `<span class="pill" style="background:${col}22;color:${col};border:1px solid ${col}44">${text}</span>`;
+}
+
+// ── Render header ──────────────────────────────────────────────────────────────
+function renderHeader() {
+  const cfg = s();
+  const ba = baremes()[cfg.apprentiBareme];
+  document.getElementById('header-sub').textContent =
+    cfg.nom + ' · ' + (cfg.profil==='apprenti' ? `Apprenti — ${ba?.pct}% SMIC` : `${fEur(cfg.tauxHoraire)}/h`);
+  document.getElementById('header-pill').innerHTML =
+    pillHTML(cfg.profil==='apprenti'?'🎓 Apprenti':'👔 Salarié', cfg.profil==='apprenti'?'blue':'gold');
+}
+
+// ── Render Calcul ──────────────────────────────────────────────────────────────
+function renderCalcul() {
+  const cfg = s();
+  const pause = Number(form.pause)||cfg.pauseDefault;
+  const taux = form.overrideTaux && form.tauxCustom ? Number(form.tauxCustom) : null;
+  const cotisOverride = form.overrideCotis && form.cotisCustom !== "" ? Number(form.cotisCustom) : null;
+  const settingsForCalc = {
+    ...(taux ? {...cfg, tauxHoraire:taux, profil:"salarie"} : cfg),
+    ...(cotisOverride !== null ? {cotisations: cotisOverride} : {})
+  };
+  const result = calcGain(form.debut, form.fin, pause, settingsForCalc);
+  const ba = baremes()[cfg.apprentiBareme];
+  const cotisAffichee = cotisOverride !== null ? cotisOverride : cfg.cotisations;
+
+  let resultHTML = '';
+  if (result) {
+    const cotisInputVal = form.overrideCotis ? (form.cotisCustom !== "" ? form.cotisCustom : cotisAffichee) : cotisAffichee;
+    resultHTML = `
+    <div class="card" style="border-color:#f0c04044">
+      <p style="font-family:'Playfair Display',serif;font-size:17px;font-weight:700;margin-bottom:16px;color:var(--accent)">Résultat — ${form.date}</p>
+      <div class="big-stats">
+        <div class="big-stat" style="background:var(--green-dim);border:1px solid #3dd68c30">
+          <p class="bs-label">Net estimé</p>
+          <p class="bs-val" style="color:var(--green)">${fEur(result.net)}</p>
+          <p class="bs-sub">Cotis. −${fPct(cotisAffichee)}</p>
+        </div>
+        <div class="big-stat" style="background:var(--accent-dim);border:1px solid #f0c04030">
+          <p class="bs-label">Brut</p>
+          <p class="bs-val" style="color:var(--accent)">${fEur(result.brut)}</p>
+          <p class="bs-sub">${hhmm(result.total)} travaillées</p>
+        </div>
+      </div>
+      <div class="stat-row"><span class="stat-label">Taux horaire</span><span class="stat-val">${fEur(result.taux)}/h</span></div>
+      <div class="stat-row"><span class="stat-label">Heures travaillées</span><span class="stat-val">${hhmm(result.total)}</span></div>
+      <div class="stat-row"><span class="stat-label">Heures normales</span><span class="stat-val" style="color:var(--green)">${hhmm(result.heuresNorm)}</span></div>
+      ${result.heuresSupp>0?`<div class="stat-row"><span class="stat-label">Heures supp. (+${cfg.tauxSupp25}%)</span><span class="stat-val" style="color:var(--accent)">${hhmm(result.heuresSupp)}</span></div>`:''}
+      <div class="stat-row"><span class="stat-label">Brut total</span><span class="stat-val" style="color:var(--accent)">${fEur(result.brut)}</span></div>
+      <div class="stat-row" style="align-items:center">
+        <div style="display:flex;align-items:center;gap:10px;flex:1">
+          <span class="stat-label" style="margin-bottom:0">Cotisations salariales</span>
+          <div style="display:flex;align-items:center;background:var(--bg);border:1px solid ${form.overrideCotis?'var(--red)44':'var(--border)'};border-radius:8px;overflow:hidden;max-width:110px">
+            <input type="number" min="0" max="100" step="0.5"
+              value="${cotisInputVal}"
+              ${!form.overrideCotis?'readonly':''}
+              oninput="form.cotisCustom=this.value;renderCalcul()"
+              style="flex:1;background:transparent;border:none;outline:none;padding:5px 8px;color:${form.overrideCotis?'var(--red)':'var(--muted)'};font-size:13px;font-family:'DM Mono',monospace;width:50px;cursor:${form.overrideCotis?'text':'default'}">
+            <span style="padding-right:7px;color:var(--muted);font-size:12px">%</span>
+          </div>
+          <label style="display:flex;align-items:center;gap:4px;cursor:pointer;font-size:11px;color:var(--muted)">
+            <input type="checkbox" ${form.overrideCotis?'checked':''} style="accent-color:var(--red)"
+              onchange="form.overrideCotis=this.checked;if(!this.checked){form.cotisCustom='';}else{form.cotisCustom='${cotisAffichee}';}renderCalcul()">
+            Perso
+          </label>
+        </div>
+        <span class="stat-val" style="color:var(--red)">− ${fEur(result.cotisations)}</span>
+      </div>
+      <div class="stat-row" style="border-bottom:none"><span class="stat-label">Net estimé</span><span class="stat-val" style="color:var(--green);font-size:22px;font-weight:800">${fEur(result.net)}</span></div>
+      <button class="btn-primary" onclick="addJournee()">＋ Enregistrer cette journée</button>
+    </div>`;
+  } else {
+    resultHTML = `<div style="text-align:center;padding:32px;color:var(--muted);font-size:13px">Remplissez les horaires pour voir le calcul</div>`;
+  }
+
+  const tauxDisplay = form.overrideTaux
+    ? `<div class="input-wrap"><p class="label">Taux horaire brut</p><div class="input-box"><input type="number" min="0" step="0.01" value="${form.tauxCustom}" oninput="form.tauxCustom=this.value;renderCalcul()"><span class="suffix">€/h</span></div></div>`
+    : `<div class="taux-display">${cfg.profil==='apprenti'
+        ? `<p style="color:var(--blue);font-size:13px">🎓 ${ba?.label}<br><span style="color:var(--accent);font-weight:700">${fEur((cfg.smicHoraire??SMIC_HORAIRE)*(ba?.pct||0)/100)}/h brut</span><span style="color:var(--muted)"> (${ba?.pct}% × SMIC ${fEur(cfg.smicHoraire??SMIC_HORAIRE)})</span></p>`
+        : `<p style="color:var(--accent);font-size:15px;font-weight:700">${fEur(cfg.tauxHoraire)}/h brut</p>`
+      }</div>`;
+
+  document.getElementById('tab-calcul').innerHTML = `
+    <div class="card">
+      <p style="font-family:'Playfair Display',serif;font-size:17px;font-weight:700;margin-bottom:16px;color:var(--accent)">Saisie de la journée</p>
+      <div class="input-row">
+        <div class="input-wrap"><p class="label">Date</p><div class="input-box"><input type="date" value="${form.date}" oninput="form.date=this.value;renderCalcul()"></div></div>
+        <div class="input-wrap"><p class="label">Début</p><div class="input-box"><input type="time" value="${form.debut}" oninput="form.debut=this.value;renderCalcul()"></div></div>
+      </div>
+      <div class="input-row">
+        <div class="input-wrap"><p class="label">Fin</p><div class="input-box"><input type="time" value="${form.fin}" oninput="form.fin=this.value;renderCalcul()"></div></div>
+        <div class="input-wrap"><p class="label">Pause (min)</p><div class="input-box"><input type="number" min="0" max="180" value="${form.pause}" placeholder="${cfg.pauseDefault}" oninput="form.pause=this.value;renderCalcul()"><span class="suffix">min</span></div></div>
+      </div>
+      <div class="input-wrap"><p class="label">Note (optionnel)</p><div class="input-box"><input type="text" value="${escHtml(form.note)}" oninput="form.note=this.value"></div></div>
+    </div>
+    <div class="card">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+        <p style="font-family:'Playfair Display',serif;font-size:15px;font-weight:700">Taux horaire</p>
+        <label class="checkbox-row"><input type="checkbox" ${form.overrideTaux?'checked':''} style="accent-color:var(--accent)" onchange="form.overrideTaux=this.checked;renderCalcul()"> Taux personnalisé</label>
+      </div>
+      ${tauxDisplay}
+    </div>
+    ${resultHTML}
+  `;
+}
+
+// ── Render Historique ──────────────────────────────────────────────────────────
+function renderHistorique() {
+  const cfg = s();
+  const journees = appData.journees;
+  if (journees.length===0) {
+    document.getElementById('tab-historique').innerHTML = `<div style="text-align:center;padding:60px;color:var(--muted)">Aucune journée enregistrée</div>`;
+    return;
+  }
+  document.getElementById('tab-historique').innerHTML = journees.map(j => `
+    <div class="entry-row">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px">
+        <div>
+          <p style="font-weight:700;font-size:14px;margin-bottom:4px">${fdate(j.date)}</p>
+          <div style="display:flex;gap:6px;flex-wrap:wrap">
+            ${pillHTML(j.debut+' → '+j.fin,'gray')}
+            ${pillHTML('☕ '+j.pause+'min','gray')}
+            ${j.profilUsed==='apprenti'?pillHTML('🎓 Apprenti','blue'):''}
+            ${j.result.heuresSupp>0?pillHTML('+'+hhmm(j.result.heuresSupp)+' supp.','gold'):''}
+          </div>
+          ${j.note?`<p style="color:var(--muted);font-size:12px;margin-top:6px">📝 ${escHtml(j.note)}</p>`:''}
+        </div>
+        <div style="text-align:right">
+          <p style="color:var(--green);font-size:20px;font-weight:800">${fEur(j.result.net,cfg.devise)}</p>
+          <p style="color:var(--muted);font-size:11px">brut ${fEur(j.result.brut,cfg.devise)}</p>
+          <p style="color:var(--muted);font-size:11px">${hhmm(j.result.total)}</p>
+        </div>
+      </div>
+      <div class="net-bar"><div class="net-bar-fill" style="width:${(j.result.net/j.result.brut)*100}%"></div></div>
+      <button class="del-btn" onclick="removeJournee('${j.id}')">✕</button>
+    </div>
+  `).join('');
+}
+
+// ── Render Récap ───────────────────────────────────────────────────────────────
+function renderRecap() {
+  const cfg = s();
+  const journees = appData.journees;
+  if (journees.length===0) {
+    document.getElementById('tab-recap').innerHTML = `<div style="text-align:center;padding:60px;color:var(--muted)">Aucune donnée disponible</div>`;
+    return;
+  }
+
+  const byMonth = {};
+  journees.forEach(j => {
+    const mk = j.date.slice(0,7);
+    if (!byMonth[mk]) byMonth[mk]=[];
+    byMonth[mk].push(j);
+  });
+  const sortedMonths = Object.keys(byMonth).sort((a,b)=>b.localeCompare(a));
+  if (!byMonth[selectedMonth]) selectedMonth = sortedMonths[0];
+
+  const totals = journees.reduce((acc,j)=>({
+    heures:acc.heures+j.result.total, brut:acc.brut+j.result.brut,
+    net:acc.net+j.result.net, supp:acc.supp+j.result.heuresSupp
+  }),{heures:0,brut:0,net:0,supp:0});
+
+  const mJours = byMonth[selectedMonth]||[];
+  const mNet=mJours.reduce((a,j)=>a+j.result.net,0);
+  const mBrut=mJours.reduce((a,j)=>a+j.result.brut,0);
+  const mH=mJours.reduce((a,j)=>a+j.result.total,0);
+  const mS=mJours.reduce((a,j)=>a+j.result.heuresSupp,0);
+  const mCot=mJours.reduce((a,j)=>a+j.result.cotisations,0);
+  const nomMois=new Date(selectedMonth+"-15").toLocaleDateString("fr-FR",{month:"long",year:"numeric"});
+  const joursDansLeMois=new Date(selectedMonth.slice(0,4),parseInt(selectedMonth.slice(5,7)),0).getDate();
+  let joursOuvres=0;
+  const y=parseInt(selectedMonth.slice(0,4)),m=parseInt(selectedMonth.slice(5,7))-1;
+  for(let d=1;d<=joursDansLeMois;d++){const wd=new Date(y,m,d).getDay();if(wd!==0&&wd!==6)joursOuvres++;}
+  const pctMois=Math.min(100,(mJours.length/joursOuvres)*100);
+
+  // Semaines du mois
+  const weeksMois={};
+  mJours.forEach(j=>{
+    const d=new Date(j.date+"T12:00:00");
+    const mon=new Date(d); mon.setDate(d.getDate()-((d.getDay()+6)%7));
+    const wk=mon.toISOString().slice(0,10);
+    if(!weeksMois[wk]) weeksMois[wk]=[];
+    weeksMois[wk].push(j);
+  });
+
+  const currentMonthKey=new Date().toISOString().slice(0,7);
+  const monthBtns=sortedMonths.map(mk=>{
+    const label=new Date(mk+"-15").toLocaleDateString("fr-FR",{month:"short",year:"2-digit"});
+    const isSel=mk===selectedMonth;
+    return `<button class="month-btn" onclick="selectedMonth='${mk}';renderRecap()"
+      style="border:1.5px solid ${isSel?'var(--accent)':'var(--border)'};background:${isSel?'var(--accent-dim)':'transparent'};color:${isSel?'var(--accent)':'var(--muted)'}"
+    >${label}${mk===currentMonthKey?' ●':''}</button>`;
+  }).join('');
+
+  const weeksSec=Object.keys(weeksMois).length>0?`
+    <div class="card">
+      <p style="font-family:'Playfair Display',serif;font-size:15px;font-weight:700;margin-bottom:14px">Semaines de ${nomMois}</p>
+      ${Object.keys(weeksMois).sort((a,b)=>b.localeCompare(a)).map(wk=>{
+        const jrs=weeksMois[wk];
+        const wNet=jrs.reduce((a,j)=>a+j.result.net,0);
+        const wBrut=jrs.reduce((a,j)=>a+j.result.brut,0);
+        const wH=jrs.reduce((a,j)=>a+j.result.total,0);
+        const wS=jrs.reduce((a,j)=>a+j.result.heuresSupp,0);
+        const monDate=new Date(wk+"T12:00:00");
+        return `<div class="week-block">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+            <div><p style="font-weight:700;font-size:13px">Semaine du ${monDate.toLocaleDateString("fr-FR",{day:"numeric",month:"short"})}</p><p style="color:var(--muted);font-size:11px">${jrs.length} jour${jrs.length>1?"s":""}</p></div>
+            <div style="text-align:right"><p style="color:var(--green);font-weight:800;font-family:'DM Mono',monospace">${fEur(wNet,cfg.devise)}</p><p style="color:var(--muted);font-size:11px">brut ${fEur(wBrut,cfg.devise)}</p></div>
+          </div>
+          <div style="display:flex;gap:6px;margin-bottom:10px">
+            <div style="background:var(--card);border-radius:8px;padding:6px 10px"><span style="color:var(--muted);font-size:10px">Heures </span><span style="color:var(--blue);font-weight:700;font-size:12px">${hhmm(wH)}</span></div>
+            <div style="background:var(--card);border-radius:8px;padding:6px 10px"><span style="color:var(--muted);font-size:10px">Supp. </span><span style="color:var(--accent);font-weight:700;font-size:12px">${hhmm(wS)}</span></div>
+          </div>
+          ${jrs.sort((a,b)=>a.date.localeCompare(b.date)).map(j=>`<div style="display:flex;justify-content:space-between;padding:5px 0;font-size:12px;border-top:1px dashed var(--border)"><span style="color:var(--muted)">${fdate(j.date)} · ${j.debut}–${j.fin} · ${hhmm(j.result.total)}</span><span style="color:var(--green);font-weight:700">${fEur(j.result.net,cfg.devise)}</span></div>`).join('')}
+        </div>`;
+      }).join('')}
+    </div>`:mJours.length===0?`<div style="text-align:center;padding:32px;color:var(--muted);font-size:13px">Aucune journée enregistrée pour ${nomMois}</div>`:'';
+
+  document.getElementById('tab-recap').innerHTML = `
+    <div class="card">
+      <p style="color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.1em;margin-bottom:10px">Sélectionner un mois</p>
+      <div class="month-btns">${monthBtns}</div>
+    </div>
+    <div class="card" style="border-color:var(--green);background:linear-gradient(135deg,var(--card) 60%,#3dd68c08)">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px">
+        <div>
+          <p style="color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.1em">Total du mois</p>
+          <p style="font-family:'Playfair Display',serif;font-size:20px;font-weight:900;margin-top:2px">${nomMois.charAt(0).toUpperCase()+nomMois.slice(1)}</p>
+          <p style="color:var(--muted);font-size:12px;margin-top:4px">${mJours.length} jour${mJours.length>1?"s":""} pointé${mJours.length>1?"s":""} / ${joursOuvres} ouvrés</p>
+        </div>
+        <div style="text-align:right">
+          <p style="color:var(--green);font-size:32px;font-weight:900;font-family:'DM Mono',monospace;line-height:1">${fEur(mNet,cfg.devise)}</p>
+          <p style="color:var(--muted);font-size:12px;margin-top:4px">net estimé</p>
+        </div>
+      </div>
+      <div style="margin-bottom:16px">
+        <div style="display:flex;justify-content:space-between;margin-bottom:6px"><span style="color:var(--muted);font-size:11px">Progression du mois</span><span style="color:var(--green);font-size:11px;font-weight:700">${Math.round(pctMois)}%</span></div>
+        <div class="progress-bar"><div class="progress-fill" style="width:${pctMois}%"></div></div>
+      </div>
+      <div class="grid2">
+        ${[{l:"Brut mensuel",v:fEur(mBrut,cfg.devise),c:"var(--accent)"},{l:"Cotisations",v:`− ${fEur(mCot,cfg.devise)}`,c:"var(--red)"},{l:"Heures travaillées",v:hhmm(mH),c:"var(--blue)"},{l:"Heures supp.",v:hhmm(mS),c:"var(--accent)"}].map(x=>`
+        <div class="mini-stat"><p class="mini-stat-label">${x.l}</p><p class="mini-stat-val" style="color:${x.c}">${x.v}</p></div>`).join('')}
+      </div>
+      ${mJours.length>0?`<div style="margin-top:10px;background:var(--green-dim);border-radius:10px;padding:10px 14px;border:1px solid #3dd68c30;display:flex;justify-content:space-between;align-items:center"><span style="color:var(--muted);font-size:12px">Moyenne / jour travaillé</span><div style="text-align:right"><span style="color:var(--green);font-weight:700;font-family:'DM Mono',monospace">${fEur(mNet/mJours.length,cfg.devise)} net</span><span style="color:var(--muted);font-size:11px;margin-left:8px">· ${hhmm(mH/mJours.length)}</span></div></div>`:''}
+    </div>
+    ${weeksSec}
+    <div class="card" style="border-color:#f0c04033">
+      <p style="font-family:'Playfair Display',serif;font-size:15px;font-weight:700;color:var(--accent);margin-bottom:12px">Tous les mois — ${journees.length} jour${journees.length>1?"s":""}</p>
+      <div style="display:flex;gap:10px">
+        <div class="big-stat" style="background:var(--green-dim);border:1px solid #3dd68c30"><p class="bs-label">Net global</p><p class="bs-val" style="color:var(--green)">${fEur(totals.net,cfg.devise)}</p></div>
+        <div class="big-stat" style="background:var(--accent-dim);border:1px solid #f0c04030"><p class="bs-label">Brut global</p><p class="bs-val" style="color:var(--accent)">${fEur(totals.brut,cfg.devise)}</p></div>
+      </div>
+      <div style="display:flex;gap:10px;margin-top:10px">
+        <div class="big-stat" style="background:var(--blue-dim);border:1px solid #5b8af530"><p class="bs-label">Heures totales</p><p class="bs-val" style="color:var(--blue)">${hhmm(totals.heures)}</p></div>
+        <div class="big-stat" style="background:var(--red-dim);border:1px solid #f25c5c30"><p class="bs-label">Heures supp.</p><p class="bs-val" style="color:var(--red)">${hhmm(totals.supp)}</p></div>
+      </div>
+    </div>
+  `;
+}
+
+// ── Render Réglages ────────────────────────────────────────────────────────────
+function renderReglages() {
+  const cfg = s();
+  const bs = baremes();
+
+  // Profil section
+  let profilSection = `
+    <div class="card">
+      <p style="font-family:'Playfair Display',serif;font-size:17px;font-weight:700;color:var(--accent);margin-bottom:14px">Profil</p>
+      <div class="input-wrap" style="margin-bottom:12px"><p class="label">Nom</p><div class="input-box"><input type="text" value="${escHtml(cfg.nom)}" oninput="updateSetting('nom',this.value)"></div></div>
+      <p class="label">Type de contrat</p>
+      <div style="display:flex;gap:10px">
+        ${['salarie','apprenti'].map((v,i)=>`<button class="contract-btn" onclick="updateSetting('profil','${v}');render()"
+          style="border-color:${cfg.profil===v?'var(--accent)':'var(--border)'};background:${cfg.profil===v?'var(--accent-dim)':'transparent'};color:${cfg.profil===v?'var(--accent)':'var(--muted)'}">
+          ${i===0?'👔 Salarié':'🎓 Apprenti'}</button>`).join('')}
+      </div>
+    </div>`;
+
+  // Taux salarié
+  let tauxSection = cfg.profil==='salarie' ? `
+    <div class="card">
+      <p style="font-family:'Playfair Display',serif;font-size:16px;font-weight:700;margin-bottom:14px">Rémunération</p>
+      <div class="input-wrap"><p class="label">Taux horaire brut (€/h)</p><div class="input-box"><input type="number" min="0" step="0.01" value="${cfg.tauxHoraire}" oninput="updateSetting('tauxHoraire',Number(this.value));renderCalcul()"><span class="suffix">€/h</span></div></div>
+    </div>` : '';
+
+  // Barème apprenti
+  let baremeSection = cfg.profil==='apprenti' ? (()=>{
+    const smicCustom=cfg.smicHoraire??SMIC_HORAIRE;
+    const baremeActif=bs[cfg.apprentiBareme]||bs[0];
+    const tauxActif=smicCustom*(baremeActif?.pct||0)/100;
+    const baremeRows=bs.map((b,i)=>{
+      const isSel=cfg.apprentiBareme===i;
+      const tauxH=smicCustom*b.pct/100;
+      return `<div class="bareme-row" style="border:1.5px solid ${isSel?'var(--blue)':'var(--border)'};background:${isSel?'var(--blue-dim)':'var(--bg)'}">
+        <div style="display:flex;align-items:center;padding:8px 12px;cursor:pointer;gap:10px" onclick="updateSetting('apprentiBareme',${i});renderReglages()">
+          <div class="radio-dot" style="border:2px solid ${isSel?'var(--blue)':'var(--sub)'};background:${isSel?'var(--blue)':'transparent'}">
+            ${isSel?'<div class="radio-inner"></div>':''}
+          </div>
+          <span style="color:${isSel?'var(--blue)':'var(--muted)'};font-weight:700;font-size:12px;flex:1">Barème ${i+1}</span>
+          <span style="color:var(--accent);font-weight:800;font-family:'DM Mono',monospace;font-size:13px">${fEur(tauxH)}/h</span>
+        </div>
+        <div class="bareme-fields">
+          <div><p class="label">Intitulé</p><div class="input-box" style="background:var(--card)"><input type="text" value="${escHtml(b.label)}" onclick="event.stopPropagation()" oninput="updateBareme(${i},'label',this.value)" style="font-size:12px;padding:8px 12px"></div></div>
+          <div style="display:flex;gap:8px;align-items:flex-end">
+            <div style="flex:1"><p class="label">% du SMIC</p><div class="input-box" style="background:var(--card);border-color:${isSel?'#5b8af566':'var(--border)'}"><input type="number" min="0" max="200" step="1" value="${b.pct}" onclick="event.stopPropagation()" oninput="updateBareme(${i},'pct',Number(this.value));renderReglages()" style="color:var(--accent);font-size:14px;font-weight:700;padding:8px 12px"><span class="suffix">%</span></div></div>
+            <div style="background:var(--card);border:1px solid var(--border);border-radius:8px;padding:8px 14px;text-align:center;min-width:90px"><p style="color:var(--muted);font-size:9px;text-transform:uppercase;letter-spacing:.08em">= taux/h</p><p style="color:var(--accent);font-weight:800;font-family:'DM Mono',monospace;font-size:14px;margin-top:2px">${fEur(tauxH)}</p></div>
+          </div>
+          <div><p class="label">Charges salariales spécifiques (%)</p><div class="input-box" style="background:var(--card)"><input type="number" min="0" max="50" step="0.5" value="${b.cotisations??cfg.cotisations}" onclick="event.stopPropagation()" oninput="updateBareme(${i},'cotisations',Number(this.value))" style="padding:8px 12px;font-size:13px"><span class="suffix">%</span></div><p style="color:var(--muted);font-size:10px;margin-top:3px">Net estimé : ${fEur(tauxH*(1-(b.cotisations??cfg.cotisations)/100))}/h</p></div>
+        </div>
+      </div>`;
+    }).join('');
+    return `
+      <div class="card" style="border-color:#5b8af555">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px">
+          <div><p style="font-family:'Playfair Display',serif;font-size:16px;font-weight:700;color:var(--blue)">🎓 Paramètres Apprenti</p><p style="color:var(--muted);font-size:11px;margin-top:2px">Modifiez labels, pourcentages et SMIC</p></div>
+          <button onclick="resetBaremes()" style="background:none;border:1px solid var(--border);border-radius:8px;padding:5px 10px;color:var(--muted);font-size:11px;cursor:pointer;font-family:inherit">↺ Réinitialiser</button>
+        </div>
+        <div style="background:var(--bg);border-radius:12px;padding:14px;margin-bottom:16px;border:1px solid #5b8af533">
+          <div style="display:flex;align-items:center;gap:12px">
+            <div style="flex:1"><p class="label">SMIC horaire brut de référence</p><div class="input-box" style="border-color:#5b8af555"><input type="number" min="0" step="0.01" value="${smicCustom}" oninput="updateSetting('smicHoraire',Number(this.value));renderReglages()" style="color:var(--blue);font-size:16px;font-weight:700"><span class="suffix">€/h</span></div></div>
+            <div style="text-align:center;min-width:90px"><p style="color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.08em">Taux actif</p><p style="color:var(--accent);font-size:20px;font-weight:800;font-family:'DM Mono',monospace;margin-top:4px">${fEur(tauxActif)}/h</p><p style="color:var(--muted);font-size:10px">${baremeActif?.pct}% SMIC</p></div>
+          </div>
+        </div>
+        <p class="label">Barèmes (cliquez sur une ligne pour la sélectionner)</p>
+        <div style="display:flex;flex-direction:column;gap:8px;margin-top:6px">${baremeRows}</div>
+        <div class="info-box"><p style="color:var(--blue);font-size:12px;font-weight:700">ℹ️ Exonération de cotisations</p><p style="color:var(--muted);font-size:11px;margin-top:4px">Les apprentis dont la rémunération est ≤ 79% du SMIC sont exonérés de cotisations salariales. Ajustez le % de charges à 0 pour ces barèmes.</p></div>
+      </div>`;
+  })() : '';
+
+  // Cotisations
+  const cotisFields=[
+    {key:"cotisations",label:"Charges salariales",suffix:"%"},
+    {key:"tauxSupp25",label:"Majoration H. supp. (1-8h)",suffix:"%"},
+    {key:"tauxSupp50",label:"Majoration H. supp. (>8h)",suffix:"%"},
+    {key:"seuilCompl",label:"Seuil hebdo (h normales)",suffix:"h/sem"},
+    {key:"pauseDefault",label:"Pause par défaut",suffix:"min"},
+  ];
+  const cotisSection=`
+    <div class="card">
+      <p style="font-family:'Playfair Display',serif;font-size:16px;font-weight:700;margin-bottom:14px">Cotisations & Majorations</p>
+      <div style="display:flex;flex-direction:column;gap:12px">
+        ${cotisFields.map(f=>`<div class="input-wrap"><p class="label">${f.label}</p><div class="input-box"><input type="number" min="0" step="${f.key==='cotisations'||f.key.startsWith('taux')?1:0.5}" value="${cfg[f.key]}" oninput="updateSetting('${f.key}',Number(this.value))"><span class="suffix">${f.suffix}</span></div></div>`).join('')}
+      </div>
+    </div>`;
+
+  const deviseSection=`
+    <div class="card">
+      <p style="font-family:'Playfair Display',serif;font-size:16px;font-weight:700;margin-bottom:12px">Devise</p>
+      <div class="input-wrap"><p class="label">Symbole</p>
+      <select class="select-full" onchange="updateSetting('devise',this.value)">
+        ${[['€','€ Euro'],['$','$ Dollar'],['£','£ Livre'],['CHF','CHF Franc suisse']].map(([v,l])=>`<option value="${v}" ${cfg.devise===v?'selected':''}>${l}</option>`).join('')}
+      </select></div>
+    </div>`;
+
+  const dataSection=`
+    <div class="card">
+      <p style="font-family:'Playfair Display',serif;font-size:16px;font-weight:700;margin-bottom:12px">Données</p>
+      <div style="display:flex;gap:10px">
+        <button class="btn-outline" onclick="clearData()" style="border-color:#f25c5c44;color:var(--red)">🗑 Effacer</button>
+        <button class="btn-outline" onclick="exportData()" style="border-color:#5b8af544;color:var(--blue)">↓ Exporter</button>
+      </div>
+    </div>
+    <div style="text-align:center;color:var(--sub);font-size:11px;padding-bottom:16px">GainCalc v1.0 — Calcul indicatif, non contractuel</div>`;
+
+  document.getElementById('tab-reglages').innerHTML = profilSection + tauxSection + baremeSection + cotisSection + deviseSection + dataSection;
+}
+
+// ── Actions ────────────────────────────────────────────────────────────────────
+function addJournee() {
+  const cfg=s();
+  const pause=Number(form.pause)||cfg.pauseDefault;
+  const taux=form.overrideTaux&&form.tauxCustom?Number(form.tauxCustom):null;
+  const cotisOverride=form.overrideCotis&&form.cotisCustom!==""?Number(form.cotisCustom):null;
+  const settingsForCalc={
+    ...(taux?{...cfg,tauxHoraire:taux,profil:"salarie"}:cfg),
+    ...(cotisOverride!==null?{cotisations:cotisOverride}:{})
+  };
+  const result=calcGain(form.debut,form.fin,pause,settingsForCalc);
+  if(!result) return;
+  const entry={id:uid(),date:form.date,debut:form.debut,fin:form.fin,pause,note:form.note,result,profilUsed:cfg.profil,tauxUsed:result.taux};
+  appData.journees=[entry,...appData.journees];
+  form.note="";
+  saveData(); render();
+}
+
+function removeJournee(id) {
+  appData.journees=appData.journees.filter(j=>j.id!==id);
+  saveData(); render();
+}
+
+function updateSetting(key, val) {
+  if(!appData.settings) appData.settings={};
+  appData.settings[key]=val;
+  saveData(); renderHeader();
+}
+
+function updateBareme(i, field, val) {
+  const bs=appData.settings?.customBaremes||APPRENTI_BAREMES_DEFAULT.map(b=>({...b}));
+  bs[i]={...bs[i],[field]:val};
+  if(!appData.settings) appData.settings={};
+  appData.settings.customBaremes=bs;
+  saveData();
+}
+
+function resetBaremes() {
+  if(!window.confirm("Réinitialiser tous les barèmes aux valeurs légales ?")) return;
+  if(!appData.settings) appData.settings={};
+  appData.settings.customBaremes=APPRENTI_BAREMES_DEFAULT.map(b=>({...b}));
+  appData.settings.smicHoraire=SMIC_HORAIRE;
+  saveData(); renderReglages();
+}
+
+function clearData() {
+  if(!window.confirm("Effacer tout l'historique ?")) return;
+  appData.journees=[];
+  saveData(); render();
+}
+
+function exportData() {
+  const blob=new Blob([JSON.stringify(appData,null,2)],{type:"application/json"});
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(blob);
+  a.download=`gaincalc_${today()}.json`; a.click();
+}
+
+// ── Utils ──────────────────────────────────────────────────────────────────────
+function escHtml(str) { return String(str||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function css(varName) { return getComputedStyle(document.documentElement).getPropertyValue(varName).trim(); }
+
+function render() {
+  renderHeader();
+  if(currentTab==='calcul') renderCalcul();
+  else if(currentTab==='historique') renderHistorique();
+  else if(currentTab==='recap') renderRecap();
+  else if(currentTab==='reglages') renderReglages();
+}
+
+render();
+</script>
+</body>
+</html>
